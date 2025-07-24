@@ -1,4 +1,4 @@
-# 📌 Pinterest Flutter Clone
+# 📌 Interest
 
 A modern, responsive and scalable **Flutter** project — building a **Pinterest-inspired social media application** using **Supabase Realtime Database** 📡 and **Firebase Authentication** 🔐. This app allows users to share posts, view others' content, interact with rich media (images, descriptions, emojis), and manage their profiles securely and in real time.
 
