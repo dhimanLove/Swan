@@ -1,137 +1,155 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pinterest/Pages/onboarding.dart';
+import 'package:pinterest/Pages/settings.dart';
 
-class CupertinoProfile extends StatelessWidget {
-  const CupertinoProfile({super.key});
+class ProfileController extends GetxController {
+  final SupabaseClient supabaseClient = Supabase.instance.client;
+  Rx<User?> user = Rx<User?>(null);
+  RxString name = 'No Name'.obs;
+  RxString errorMessage = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchUser();
+  }
+
+  Future<void> fetchUser() async {
+    try {
+      final authUser = supabaseClient.auth.currentUser;
+      if (authUser == null) {
+        Get.offAll(() => const Onboarding());
+      } else {
+        user.value = authUser;
+        name.value = authUser.userMetadata?['name'] ?? 'No Name';
+      }
+    } catch (e) {
+      errorMessage.value = 'Failed to load user data: $e';
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await supabaseClient.auth.signOut();
+      Get.offAll(() => const Onboarding());
+    } catch (e) {
+      errorMessage.value = 'Logout failed: $e';
+    }
+  }
+}
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = CupertinoTheme.of(context);
+    final ProfileController controller = Get.put(ProfileController());
 
-    return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text("Your Profile"),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Profile Photo + Name + Email
-              const CircleAvatar(
-                radius: 45,
-                backgroundColor: CupertinoColors.systemGrey,
-                child: Icon(CupertinoIcons.person, size: 50),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                "Loveraj",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text(
-                "loveraj@example.com",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: CupertinoColors.systemGrey,
-                ),
-              ),
-              const SizedBox(height: 24),
+    return Obx(() {
+      if (controller.user.value == null &&
+          controller.errorMessage.value.isEmpty) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
 
-              // About Section
-              Container(
-                padding: const EdgeInsets.all(14),
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('My Profile'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => Get.to(() => const SettingsScreen()),
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: controller.fetchUser,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 30,
+                ),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  "Hey! I'm Loveraj, a CSE student and the founder of Love Interest ❤️.\n"
-                  "This is where I share the cutest hampers and gift ideas starting from ₹250.\n"
-                  "Stay tuned for more magic! ✨",
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Hashtags
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "🔥 Trending Hashtags",
-                  style: theme.textTheme.navTitleTextStyle,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(6, (index) {
-                  final tags = ["#cutegifts", "#hampers", "#diypackaging", "#loveinterest", "#giftideas", "#aesthetic"];
-                  return CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    color: CupertinoColors.systemPink.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Text(tags[index], style: const TextStyle(fontSize: 14)),
-                    onPressed: () {},
-                  );
-                }),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Posts Grid (2 per row)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "🖼️ Your Posts",
-                  style: theme.textTheme.navTitleTextStyle,
-                ),
-              ),
-              const SizedBox(height: 12),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: 6,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.8,
-                ),
-                itemBuilder: (context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.systemGrey5,
-                      borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
                     ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            alignment: Alignment.center,
-                            child: const Icon(CupertinoIcons.photo, size: 50),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text("Post #${index + 1}",
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Profile Avatar
+                    const CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blueAccent,
+                      child: Icon(Icons.person, color: Colors.white, size: 50),
                     ),
-                  );
-                },
+                    const SizedBox(height: 20),
+
+                    // Name
+                    Text(
+                      controller.name.value,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Email
+                    Text(
+                      controller.user.value?.email ?? 'No Email',
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Error Message
+                    if (controller.errorMessage.value.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Text(
+                          controller.errorMessage.value,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+
+                    // Logout Button
+                    ElevatedButton.icon(
+                      onPressed: controller.signOut,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Sign Out'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 40),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

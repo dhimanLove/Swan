@@ -19,11 +19,11 @@ class _GoogleNavState extends State<GoogleNav> {
   final PageController _pageController = PageController();
 
   final List<Widget> _pages = const [
-    Homescreen(),
+    HomePage(),
     Messages(),
     PostScreen(),
     SearchScreen(),
-    CupertinoProfile(),
+    ProfileScreen(),
   ];
 
   @override
