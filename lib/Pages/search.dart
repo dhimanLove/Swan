@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pinterest/components/pptheme.dart'; // Make sure this exists and has ThemeData
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
+import '../Pages/details.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -11,103 +15,227 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final supabase = Supabase.instance.client;
   final TextEditingController _searchController = TextEditingController();
-  final List<String> _allItems = List.generate(50, (index) => 'Item $index');
-  List<String> _filteredItems = [];
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredItems = _allItems;
     _searchController.addListener(_onSearchChanged);
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredItems = _allItems
-          .where((item) => item.toLowerCase().contains(query))
-          .toList();
-    });
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() => _searchResults = []);
+    } else {
+      _searchSupabase(query);
+    }
+  }
+
+  Future<void> _searchSupabase(String query) async {
+    setState(() => _isSearching = true);
+    try {
+      final response = await supabase
+          .from('interest')
+          .select()
+          .ilike('description', '%$query%')
+          .order('created_at', ascending: false);
+
+      setState(() {
+        _searchResults = response.cast<Map<String, dynamic>>();
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() => _isSearching = false);
+    }
+  }
+
+  Widget buildShimmerCard(double height) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[600]!,
+      highlightColor: Colors.grey[500]!,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.grey[600],
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final crossAxisCount = MediaQuery.of(context).size.width > 600 ? 4 : 2;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          CupertinoSliverNavigationBar(
-            largeTitle: const Text("Search"),
-            trailing: CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: const Icon(CupertinoIcons.clear),
-              onPressed: () {
-                _searchController.clear();
-              },
-            ),
-            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.9),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: CupertinoSearchTextField(
-                controller: _searchController,
-                placeholder: "Search Hampers, Gifts...",
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
-                  fontSize: 16,
+    return CupertinoPageScaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text(
+          "Search",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor:
+            isDark
+                ? Colors.grey[900]?.withOpacity(0.9)
+                : Colors.white.withOpacity(0.9),
+        border: null,
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[850] : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: CupertinoSearchTextField(
+                  controller: _searchController,
+                  placeholder: "Search Your Vibe",
+                  padding: const EdgeInsets.all(22),
+                  
+                  backgroundColor: Colors.transparent,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
-          ),
-          _filteredItems.isEmpty
-              ? const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: Text("No results found")),
-                )
-              : SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = _filteredItems[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.grey[850] : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              if (!isDark)
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 2),
+
+            Expanded(
+              child:
+                  _isSearching
+                      ? MasonryGridView.count(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: 10,
+                        itemBuilder:
+                            (context, index) =>
+                                buildShimmerCard((index % 2 == 0) ? 200 : 280),
+                      )
+                      : _searchResults.isEmpty &&
+                          _searchController.text.isNotEmpty
+                      ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          const Text(
+                            "No results found",
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                          TextButton(
+                            onPressed: () => _searchController.clear(),
+                            child: const Text("Clear Search"),
+                          ),
+                        ],
+                      )
+                      : MasonryGridView.count(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final item = _searchResults[index];
+                          final imageUrl = item['image_url'];
+                          final description = item['description'] ?? "";
+
+                          return GestureDetector(
+                            onTap: () {
+                              Get.to(
+                                () => DetailPage(
+                                  imgUrl: imageUrl,
+                                  desc: description,
                                 ),
-                            ],
-                          ),
-                          child: ListTile(
-                            title: Text(item),
-                            trailing: const Icon(CupertinoIcons.chevron_forward),
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: _filteredItems.length,
-                  ),
-                ),
-        ],
+                                transition: Transition.cupertino,
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                children: [
+                                  CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder:
+                                        (context, url) => buildShimmerCard(
+                                          (index % 2 == 0) ? 200 : 280,
+                                        ),
+                                    errorWidget:
+                                        (context, url, error) => Container(
+                                          height: (index % 2 == 0) ? 200 : 280,
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.broken_image),
+                                        ),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black54,
+                                          ],
+                                        ),
+                                      ),
+                                      child: Text(
+                                        description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+            ),
+          ],
+        ),
       ),
     );
   }

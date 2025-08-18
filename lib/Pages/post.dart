@@ -10,13 +10,34 @@ class PostController extends GetxController {
   final descriptionController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void onClose() {
+    descriptionController.dispose();
+    super.onClose();
+  }
+
   Future<void> pickImage() async {
-    final XFile? pickedImage = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedImage != null) {
-      selectedImage = File(pickedImage.path);
-      update();
+    try {
+      final XFile? pickedImage = await _picker.pickImage(
+        source: ImageSource.gallery,
+      );
+      if (pickedImage != null) {
+        selectedImage = File(pickedImage.path);
+        update();
+      }
+    } catch (e) {
+      Get.dialog(
+        CupertinoAlertDialog(
+          title: const Text("Error"),
+          content: Text("Image picking failed: $e"),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text("OK"),
+              onPressed: () => Get.back(),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -33,18 +54,16 @@ class PostController extends GetxController {
       return;
     }
 
-    // Show loading dialog
-    showCupertinoDialog(
-      context: Get.context!,
+    // Show loading
+    Get.dialog(
+      const CupertinoAlertDialog(
+        title: Text("Uploading"),
+        content: Padding(
+          padding: EdgeInsets.only(top: 16),
+          child: CupertinoActivityIndicator(radius: 15),
+        ),
+      ),
       barrierDismissible: false,
-      builder:
-          (_) => const CupertinoAlertDialog(
-            title: Text("Uploading"),
-            content: Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: CupertinoActivityIndicator(radius: 15),
-            ),
-          ),
     );
 
     try {
@@ -68,10 +87,8 @@ class PostController extends GetxController {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // Dismiss loading
-      Get.back();
+      Get.back(); // close loading
 
-      // Show success dialog
       Get.dialog(
         const CupertinoAlertDialog(
           title: Text("Uploaded"),
@@ -83,8 +100,7 @@ class PostController extends GetxController {
       descriptionController.clear();
       update();
     } catch (e) {
-      // Dismiss loading
-      Get.back();
+      Get.back(); // close loading
 
       Get.dialog(
         CupertinoAlertDialog(
@@ -115,118 +131,125 @@ class PostScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: GetBuilder<PostController>(
-        builder: (_) {
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                floating: true,
-                snap: true,
-                elevation: 0,
-                backgroundColor: theme.scaffoldBackgroundColor,
-                title: const Text('Create Pin'),
-                centerTitle: true,
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(scrw * 0.05),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: controller.pickImage,
-                        child: Container(
-                          height: scrh * 0.3,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade700),
-                          ),
-                          child:
-                              controller.selectedImage == null
-                                  ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        CupertinoIcons.photo,
-                                        size: scrw * 0.1,
-                                        color: theme.iconTheme.color
-                                            ?.withOpacity(0.6),
+        builder:
+            (_) => CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  floating: true,
+                  snap: true,
+                  elevation: 0,
+                  title: Text(
+                    'Create Pin',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w300,
+                      fontSize: 28,
+                    ),
+                  ),
+                  backgroundColor: Colors.transparent,
+                  centerTitle: true,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(scrw * 0.05),
+                    child: Column(
+                      children: [
+                        SizedBox(height: scrh * 0.06),
+                        GestureDetector(
+                          onTap: controller.pickImage,
+                          child: Container(
+                            height: scrh * 0.3,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade700),
+                            ),
+                            child:
+                                controller.selectedImage == null
+                                    ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          CupertinoIcons.photo,
+                                          size: scrw * 0.1,
+                                          color: theme.iconTheme.color
+                                              ?.withOpacity(0.6), // fixed here
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          'Tap to select an image',
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(color: Colors.grey),
+                                        ),
+                                      ],
+                                    )
+                                    : ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Image.file(
+                                        controller.selectedImage!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
                                       ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        'Tap to select an image',
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(color: Colors.grey),
-                                      ),
-                                    ],
-                                  )
-                                  : ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.file(
-                                      controller.selectedImage!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
                                     ),
-                                  ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: controller.descriptionController,
-                        maxLines: 3,
-                        maxLength: 100,
-                        style: theme.textTheme.bodyMedium,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: theme.cardColor,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.primary,
-                              width: 1.5,
+                        const SizedBox(height: 30),
+                        TextFormField(
+                          controller: controller.descriptionController,
+                          maxLines: 3,
+                          maxLength: 300,
+                          style: theme.textTheme.bodyMedium,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: theme.cardColor,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.primary,
+                                width: 1.5,
+                              ),
+                            ),
+                            hintText: 'Add a description',
+                            hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey.shade500,
                             ),
                           ),
-                          hintText: 'Add a description',
-                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(height: 20),
+                        CupertinoButton.filled(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          onPressed: controller.postImage,
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(CupertinoIcons.cloud_upload),
+                              SizedBox(width: 8),
+                              Text('Save Pin'),
+                            ]
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      CupertinoButton.filled(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        onPressed: controller.postImage,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(CupertinoIcons.cloud_upload),
-                            SizedBox(width: 8),
-                            Text('Save Pin'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                    ],
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
       ),
     );
   }

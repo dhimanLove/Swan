@@ -1,8 +1,11 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:pinterest/Auth/login.dart';
 import 'package:pinterest/Auth/signup.dart';
-import 'package:pinterest/Pages/homescreen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class Onboarding extends StatefulWidget {
@@ -12,236 +15,238 @@ class Onboarding extends StatefulWidget {
   State<Onboarding> createState() => _OnboardingState();
 }
 
-class _OnboardingState extends State<Onboarding>
-    with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  final List<Map<String, String>> _pages = [
+class _OnboardingState extends State<Onboarding> {
+  final PageController pageController = PageController();
+  final List<Map<String, String>> pages = [
     {
-      'title': 'Connect & Share',
+      'title': 'Interest',
       'description':
-          'Discover amazing content, connect with friends, and share your moments.',
+          'Swagat nahi karoge hamara?\nBas app kholo aur chill maro!',
       'type': 'asset',
       'animation': 'Assets/Cat Movement.json',
     },
     {
-      'title': 'Discover More',
-      'description':
-          'Explore a world of ideas and inspiration tailored to you.',
-      'type': 'network',
-      'animation':
-          'https://lottie.host/ab3c34ff-dc3c-4c90-8d8e-d7e13aa0b1e7/XnT3H4.json',
+      'title': 'Scene Check ',
+      'description': 'Tere vibe ka full setup ready hai \n - dekh lo zara!',
+      'type': 'asset',
+      'animation': 'Assets/Brown Bear.json',
     },
     {
-      'title': 'Join the Community',
-      'description': 'Be part of a vibrant community and make new connections.',
-      'type': 'network',
-      'animation':
-          'https://lottie.host/5e9f82ae-b07e-4cbd-8c53-52b3454c44b7/hhUSGl.json',
+      'title': 'Vibe Milegi ',
+      'description': 'Apne log, apni vibe \n bas tu hi missing tha!',
+      'type': 'asset',
+      'animation': 'Assets/Dance cat.json',
     },
   ];
-  int _currentPage = 0;
+
+  int currentPage = 0;
 
   @override
   void dispose() {
-    _pageController.dispose();
+    pageController.dispose();
     super.dispose();
+  }
+
+  Widget buildLottieOrImage(String type, String path, double height) {
+    if (path.endsWith('.json')) {
+      return Lottie.asset(
+        path,
+        height: height,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.error, color: Colors.red);
+        },
+      );
+    } else {
+      return Image.asset(
+        path,
+        height: height,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.error, color: Colors.red);
+        },
+      );
+    }
+  }
+
+  void showErrorDialog(BuildContext context, String message) {
+    showCupertinoDialog(
+      context: context,
+      builder:
+          (_) => CupertinoAlertDialog(
+            title: const Text("Oops!"),
+            content: Text(
+              message,
+              style: const TextStyle(fontFamily: "Chillax"),
+            ),
+
+            actions: [
+              CupertinoDialogAction(
+                child: const Text("OK"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final screenHeight = media.size.height;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black, Colors.blueAccent],
-            stops: [0.0, 1.0],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                flex: 5,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _pages.length,
-                  onPageChanged:
-                      (index) => setState(() => _currentPage = index),
-                  itemBuilder: (context, index) {
-                    return OnboardingPage(
-                      title: _pages[index]['title']!,
-                      description: _pages[index]['description']!,
-                      animationAsset: _pages[index]['animation']!,
-                      screenHeight: screenHeight,
-                      textTheme: textTheme,
-                      colorScheme: colorScheme,
-                    );
-                  },
-                ),
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 5,
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: pages.length,
+                onPageChanged: (index) => setState(() => currentPage = index),
+                itemBuilder: (context, index) {
+                  final item = pages[index];
+                  final isNetworkImage = item['type'] == 'network';
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: buildLottieOrImage(
+                            item['type']!,
+                            item['animation']!,
+                            isNetworkImage && (index == 1 || index == 2)
+                                ? screenHeight * 0.30
+                                : screenHeight * 0.30,
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+                        Text(
+                          item['title']!,
+                          textAlign: TextAlign.center,
+                          style: CupertinoTheme.of(context)
+                              .textTheme
+                              .navLargeTitleTextStyle
+                              .copyWith(color: Colors.white,fontFamily: "Chillax",fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          item['description']!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: "Chillax",
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              Expanded(
-                flex: 2,
-                child: BottomSection(
-                  currentPage: _currentPage,
-                  totalPages: _pages.length,
-                  onGetStarted: () => Get.off(HomePage()),
-                  onSignIn: () => Get.to(Signup()),
-                  colorScheme: colorScheme,
-                  textTheme: textTheme,
-                ),
+            ),
+            Expanded(
+              flex: 2,
+              child: BottomControls(
+                controller: pageController,
+                currentPage: currentPage,
+                totalPages: pages.length,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class OnboardingPage extends StatelessWidget {
-  final String title;
-  final String description;
-  final String animationAsset;
-  final double screenHeight;
-  final TextTheme textTheme;
-  final ColorScheme colorScheme;
-
-  const OnboardingPage({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.animationAsset,
-    required this.screenHeight,
-    required this.textTheme,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: const Duration(milliseconds: 500),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Lottie.asset(
-            animationAsset,
-            height: screenHeight * 0.35,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(height: 32),
-          Text(
-            title,
-            style: textTheme.headlineLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              description,
-              style: textTheme.bodyLarge?.copyWith(
-                fontSize: 16,
-                height: 1.5,
-                color: Colors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BottomSection extends StatelessWidget {
+class BottomControls extends StatelessWidget {
+  final PageController controller;
   final int currentPage;
   final int totalPages;
-  final VoidCallback onGetStarted;
-  final VoidCallback onSignIn;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
 
-  const BottomSection({
+  const BottomControls({
     super.key,
+    required this.controller,
     required this.currentPage,
     required this.totalPages,
-    required this.onGetStarted,
-    required this.onSignIn,
-    required this.colorScheme,
-    required this.textTheme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isLast = currentPage == totalPages - 1;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SmoothPageIndicator(
-            controller: PageController(initialPage: currentPage),
+            controller: controller,
             count: totalPages,
-            effect: WormEffect(
-              dotColor: Colors.white.withOpacity(0.3),
-              activeDotColor: colorScheme.primary,
+            effect: const WormEffect(
+              dotColor: Colors.white30,
+              activeDotColor: CupertinoColors.systemRed,
+              dotHeight: 15,
+              dotWidth: 15,
+              spacing: 20,
             ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: onGetStarted,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          const SizedBox(height: 30),
+          Hero(
+            tag: "login",
+            child: CupertinoButton.filled(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 32),
+              borderRadius: BorderRadius.circular(20),
+              child: Text(
+                isLast ? "Get Started" : "Next",
+                style: const TextStyle(fontSize: 18, fontFamily: "Chillax"),
               ),
-              minimumSize: const Size(double.infinity, 56),
-            ),
-            child: const Text(
-              "Get Started",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: onSignIn,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              minimumSize: const Size(double.infinity, 56),
-            ),
-            child: const Text(
-              "I already have an account",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              onPressed: () {
+                if (isLast) {
+                  Get.to(
+                    () => const Signup(),
+                    transition: Transition.cupertinoDialog,
+                  );
+                } else {
+                  controller.nextPage(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            "By continuing, you agree to our Terms of Service and Privacy Policy",
-            style: textTheme.bodySmall?.copyWith(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 12,
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed:
+                () => Get.to(
+                  () => const Login(),
+                  transition: Transition.cupertino,
+                ),
+            child: RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 16, color: Colors.white70),
+                children: [
+                  TextSpan(text: "Already have an account? "),
+                  TextSpan(
+                    text: "Login",
+                    style: TextStyle(
+                      fontFamily: "Chillax",
+                      color: CupertinoColors.activeBlue,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

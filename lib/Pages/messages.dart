@@ -1,61 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:lottie/lottie.dart';
 
-class Messages extends StatefulWidget {
+class Messages extends StatelessWidget {
   const Messages({super.key});
 
   @override
-  State<Messages> createState() => _MessagesState();
-}
-
-class _MessagesState extends State<Messages> {
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Messages',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w300,
+            fontSize: 28,
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                CupertinoIcons.chat_bubble_2_fill,
-                size: 120,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: size.height * 0.25,
+              width: double.infinity,
+              child: Lottie.asset(
+                'Assets/Cat typing.json',
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 30),
-              Text(
-                "Messages Coming Soon!",
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+            ),
+            const SizedBox(height: 32),
+
+            Text(
+              'Messages Coming Soon!',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 25,
+                color: theme.colorScheme.onSurface,
               ),
-              const SizedBox(height: 15),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                child: Text(
-                  "We're working hard to bring you a new way to connect. Stay tuned!",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            // Subheading
+            Text(
+              'You’ll soon be able to connect and chat with friends in real-time. Stay tuned!',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                height: 1.5,
               ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
