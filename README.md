@@ -1,6 +1,6 @@
-# 📌 Interest
+# 📌 SWAN
 
-A modern, responsive and scalable **Flutter** project — building a **Pinterest-inspired social media application** using **Supabase Realtime Database** 📡 and **Firebase Authentication** 🔐. This app allows users to share posts, view others' content, interact with rich media (images, descriptions, emojis), and manage their profiles securely and in real time.
+A modern, responsive and scalable **Flutter** project — building a **Social media Application** using **Supabase Realtime Database and Authentication ** 📡  🔐. This app allows users to share posts, view others' content, interact with rich media (images, descriptions, emojis), and manage their profiles securely and in real time.
 
 ---
 
@@ -14,7 +14,7 @@ A modern, responsive and scalable **Flutter** project — building a **Pinterest
 - 🎨 Beautiful UI with theming support (Light/Dark Mode)  
 - 😍 Emoji integration for expressive content  
 - 🚀 Optimized performance using GetX for state management
-
+- 🔒 Secure connection and safety .
 ---
 
 ## 🔧 Tech Stack
@@ -36,7 +36,7 @@ A modern, responsive and scalable **Flutter** project — building a **Pinterest
 - `get`
 - `image_picker`
 - `cupertino_icons`
-- `flutter_emoji`
+- `intl`
 - And more...
 
 ---
