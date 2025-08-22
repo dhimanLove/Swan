@@ -23,7 +23,7 @@ A modern, responsive and scalable **Flutter** project — building a **Social me
 |--------------|--------------------------|
 | Frontend     | Flutter 🐦               |
 | State Mgmt   | GetX ⚡                  |
-| Auth         | Firebase Auth 🔐         |
+| Auth         | Supabase Auth 🔐         |
 | Realtime DB  | Supabase Realtime 📡     |
 | Image Picker | Image Picker Plugin 🖼️  |
 
